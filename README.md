@@ -222,11 +222,3 @@ Open an issue to start a conversation.
 ## License
 
 [MIT](./LICENSE)
-
----
-
-Built with love by [Your Name]
-
----
-
-Let me know if you'd like help adding CI/CD, Docker setup, or unit tests.
