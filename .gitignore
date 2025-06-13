@@ -45,3 +45,9 @@ Migrations/
 secrets.json
 appsettings.Development.json
 appsettings.Production.json
+# Local development settings
+local.settings.json
+# Visual Studio Code
+.vscode/
+# DotEnv
+/Api/.env
