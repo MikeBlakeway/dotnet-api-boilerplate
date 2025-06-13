@@ -1,6 +1,54 @@
+# Set your API base URL here
 @Api_HostAddress = http://localhost:5246
 
-GET {{Api_HostAddress}}/weatherforecast/
+###
+
+# 1. Bootstrap (Seed) First Admin User
+# NOTE: Only works in Development environment when there are NO users in DB.
+POST {{Api_HostAddress}}/api/seed/admin
+Content-Type: application/json
+
+{
+  "password": "YourAdminPassword!"
+}
+
+###
+
+# 2. Authenticate as Admin (Get JWT)
+POST {{Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "YourAdminPassword!"
+}
+
+###
+
+# 3. Bulk Seed Users (Admin only, Dev only)
+# Replace YOUR_JWT_TOKEN with the token you received from /auth/login
+POST {{Api_HostAddress}}/api/seed/users
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "count": 10,
+  "roles": ["User", "Manager"]
+}
+
+###
+
+# 4. List All Users (Requires authentication)
+GET {{Api_HostAddress}}/api/User
 Accept: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+###
+
+# 5. Get Single User by ID (Requires authentication)
+# Replace 2 with a real user ID
+GET {{Api_HostAddress}}/api/User/2
+Accept: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
 
 ###
