@@ -11,5 +11,6 @@ namespace Api.Data
         }
 
         public DbSet<User> Users { get; set; } // This exposes the Users table
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Security.Cryptography;
 
 namespace Api.Controllers
 {
@@ -74,6 +75,70 @@ namespace Api.Controllers
 
             // Return token to client
             return Ok(new { token = jwt });
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+            if (user == null)
+                return Ok(new { message = "If that email exists, a reset token has been issued." });
+
+            var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
+            var expiresAt = DateTime.UtcNow.AddMinutes(30);
+
+            var resetToken = new PasswordResetToken
+            {
+                UserId = user.Id,
+                Token = token,
+                ExpiresAt = expiresAt
+            };
+
+            _context.PasswordResetTokens.Add(resetToken);
+            await _context.SaveChangesAsync();
+
+            // Check environment
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            bool isDev = string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(env, "Local", StringComparison.OrdinalIgnoreCase);
+
+            if (isDev)
+            {
+                // Show token in dev/local
+                return Ok(new
+                {
+                    message = "If that email exists, a reset token has been issued.",
+                    resetToken = token
+                });
+            }
+            else
+            {
+                // Hide token in staging/prod
+                return Ok(new
+                {
+                    message = "If that email exists, a reset token has been issued."
+                });
+            }
+        }
+
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            var resetToken = await _context.PasswordResetTokens
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.Token == request.Token && !t.Used && t.ExpiresAt > DateTime.UtcNow);
+
+            if (resetToken?.User == null)
+                return BadRequest(new { message = "Invalid or expired reset token." });
+
+            var hasher = new PasswordHasher<object>();
+            resetToken.User.PasswordHash = hasher.HashPassword(default!, request.NewPassword);
+
+            resetToken.Used = true;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Password has been reset successfully." });
         }
     }
 }
